@@ -71,6 +71,7 @@ export const seedInsights: FinancialInsight[] = [
     category: 'alert',
     priority: 'high',
     relatedIntentIds: ['seed-intent-1'],
+    timestamp: '2024-03-01T10:00:00.000Z'
   },
   {
     id: 'seed-insight-2',
@@ -79,6 +80,7 @@ export const seedInsights: FinancialInsight[] = [
     category: 'suggestion',
     priority: 'medium',
     relatedIntentIds: ['seed-intent-2'],
+    timestamp: '2024-03-01T11:00:00.000Z'
   },
   {
     id: 'seed-insight-3',
@@ -87,5 +89,6 @@ export const seedInsights: FinancialInsight[] = [
     category: 'forecast',
     priority: 'medium',
     relatedIntentIds: ['seed-intent-3'],
+    timestamp: '2024-03-01T12:00:00.000Z'
   },
 ]; 

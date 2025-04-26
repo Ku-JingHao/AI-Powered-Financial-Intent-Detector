@@ -26,6 +26,8 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CloseIcon from '@mui/icons-material/Close';
 
 import { useFinancial } from '../../context/FinancialContext';
 import { FinancialInsight } from '../../services/financialIntentService';
@@ -53,12 +55,98 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+interface AnalysisResult {
+  financial_intents: {
+    alerts: Array<{
+      message: string;
+      severity: string;
+      impact: string;
+      recommendation: string;
+    }>;
+    suggestions: Array<{
+      message: string;
+      benefit: string;
+      implementation: string;
+      priority: string;
+    }>;
+  };
+}
+
+const transformAnalysisToInsights = (analysis: AnalysisResult): FinancialInsight[] => {
+  const insights: FinancialInsight[] = [];
+  const now = new Date().toISOString();
+
+  // Transform alerts
+  analysis.financial_intents.alerts.forEach((alert, index) => {
+    insights.push({
+      id: `alert-${index}-${now}`,
+      title: alert.message,
+      description: `Impact: ${alert.impact}\n\nRecommendation: ${alert.recommendation}`,
+      category: 'alert',
+      priority: alert.severity as 'low' | 'medium' | 'high',
+      relatedIntentIds: [],
+      timestamp: now
+    });
+  });
+
+  // Transform suggestions
+  analysis.financial_intents.suggestions.forEach((suggestion, index) => {
+    insights.push({
+      id: `suggestion-${index}-${now}`,
+      title: suggestion.message,
+      description: `Benefit: ${suggestion.benefit}\n\nImplementation: ${suggestion.implementation}`,
+      category: 'suggestion',
+      priority: suggestion.priority as 'low' | 'medium' | 'high',
+      relatedIntentIds: [],
+      timestamp: now
+    });
+  });
+
+  return insights;
+};
+
 const Insights: React.FC = () => {
-  const { insights, intents } = useFinancial();
+  const { insights: contextInsights, intents, clearAll } = useFinancial();
   const theme = useTheme();
   const [tabValue, setTabValue] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [sortBy, setSortBy] = useState<'priority' | 'date'>('priority');
+  const [filter, setFilter] = useState<'all' | 'high'>('all');
   const open = Boolean(anchorEl);
+
+  // Group insights by category
+  const groupedInsights = useMemo(() => {
+    const groups = {
+      alert: contextInsights.filter((insight) => insight.category === 'alert'),
+      suggestion: contextInsights.filter((insight) => insight.category === 'suggestion'),
+      forecast: contextInsights.filter((insight) => insight.category === 'forecast'),
+    };
+
+    // Apply sorting
+    const sortInsights = (insights: FinancialInsight[]) => {
+      return [...insights].sort((a, b) => {
+        if (sortBy === 'priority') {
+          const priorityOrder = { high: 0, medium: 1, low: 2 };
+          return priorityOrder[a.priority] - priorityOrder[b.priority];
+        } else {
+          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+        }
+      });
+    };
+
+    // Apply filtering
+    const filterInsights = (insights: FinancialInsight[]) => {
+      return filter === 'high'
+        ? insights.filter(insight => insight.priority === 'high')
+        : insights;
+    };
+
+    return {
+      alert: filterInsights(sortInsights(groups.alert)),
+      suggestion: filterInsights(sortInsights(groups.suggestion)),
+      forecast: filterInsights(sortInsights(groups.forecast)),
+    };
+  }, [contextInsights, sortBy, filter]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -72,16 +160,19 @@ const Insights: React.FC = () => {
     setAnchorEl(null);
   };
 
-  // Group insights by category
-  const groupedInsights = useMemo(() => {
-    const groups = {
-      alert: insights.filter((insight) => insight.category === 'alert'),
-      suggestion: insights.filter((insight) => insight.category === 'suggestion'),
-      forecast: insights.filter((insight) => insight.category === 'forecast'),
-    };
+  const handleSortChange = (type: 'priority' | 'date') => {
+    setSortBy(type);
+    handleMenuClose();
+  };
 
-    return groups;
-  }, [insights]);
+  const handleFilterChange = (type: 'all' | 'high') => {
+    setFilter(type);
+    handleMenuClose();
+  };
+
+  const handleClearAll = () => {
+    clearAll();
+  };
 
   // Get insight icon based on category
   const getInsightIcon = (category: string) => {
@@ -131,61 +222,61 @@ const Insights: React.FC = () => {
           mb: 2,
         }}
       >
-        <Tabs 
-          value={tabValue} 
-          onChange={handleTabChange} 
-          sx={{ 
-            '& .MuiTab-root': { 
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          sx={{
+            '& .MuiTab-root': {
               minWidth: 'auto',
-              px: 3 
-            } 
+              px: 3
+            }
           }}
         >
           <Tab label="All" />
-          <Tab 
+          <Tab
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <span>Alerts</span>
                 {groupedInsights.alert.length > 0 && (
-                  <Chip 
-                    label={groupedInsights.alert.length} 
-                    size="small" 
-                    color="error" 
-                    sx={{ height: 20, fontSize: '0.75rem' }} 
+                  <Chip
+                    label={groupedInsights.alert.length}
+                    size="small"
+                    color="error"
+                    sx={{ height: 20, fontSize: '0.75rem' }}
                   />
                 )}
               </Box>
-            } 
+            }
           />
-          <Tab 
+          <Tab
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <span>Suggestions</span>
                 {groupedInsights.suggestion.length > 0 && (
-                  <Chip 
-                    label={groupedInsights.suggestion.length} 
-                    size="small" 
-                    color="warning" 
-                    sx={{ height: 20, fontSize: '0.75rem' }} 
+                  <Chip
+                    label={groupedInsights.suggestion.length}
+                    size="small"
+                    color="warning"
+                    sx={{ height: 20, fontSize: '0.75rem' }}
                   />
                 )}
               </Box>
-            } 
+            }
           />
-          <Tab 
+          <Tab
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <span>Forecasts</span>
                 {groupedInsights.forecast.length > 0 && (
-                  <Chip 
-                    label={groupedInsights.forecast.length} 
-                    size="small" 
-                    color="info" 
-                    sx={{ height: 20, fontSize: '0.75rem' }} 
+                  <Chip
+                    label={groupedInsights.forecast.length}
+                    size="small"
+                    color="info"
+                    sx={{ height: 20, fontSize: '0.75rem' }}
                   />
                 )}
               </Box>
-            } 
+            }
           />
         </Tabs>
 
@@ -194,6 +285,7 @@ const Insights: React.FC = () => {
             size="small"
             sx={{ mr: 1 }}
             aria-label="sort"
+            onClick={handleMenuClick}
           >
             <SortIcon fontSize="small" />
           </IconButton>
@@ -209,24 +301,30 @@ const Insights: React.FC = () => {
             open={open}
             onClose={handleMenuClose}
           >
-            <MenuItem>
+            <MenuItem onClick={() => handleFilterChange('all')}>
               <ListItemIcon>
                 <CheckCircleOutlineIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText>Show All</ListItemText>
             </MenuItem>
-            <MenuItem>
+            <MenuItem onClick={() => handleFilterChange('high')}>
               <ListItemIcon>
                 <HighlightOffIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText>High Priority Only</ListItemText>
             </MenuItem>
             <Divider />
-            <MenuItem>
+            <MenuItem onClick={() => handleSortChange('date')}>
               <ListItemIcon>
                 <CalendarTodayIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText>Recent First</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => handleSortChange('priority')}>
+              <ListItemIcon>
+                <WarningIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Priority Order</ListItemText>
             </MenuItem>
           </Menu>
         </Box>
@@ -234,9 +332,9 @@ const Insights: React.FC = () => {
 
       {/* Insights Panels */}
       <TabPanel value={tabValue} index={0}>
-        {insights.length > 0 ? (
+        {contextInsights.length > 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {insights.map((insight) => (
+            {contextInsights.map((insight) => (
               <Box key={insight.id}>
                 <InsightCard insight={insight} icon={getInsightIcon(insight.category)} priorityColor={getPriorityColor(insight.priority)} />
               </Box>
@@ -309,34 +407,35 @@ const Insights: React.FC = () => {
           </Typography>
         </Box>
         <Typography variant="body2" paragraph>
-          Our AI analyzes your financial communications and detects patterns and concerns. Based on this analysis, 
+          Our AI analyzes your financial communications and detects patterns and concerns. Based on this analysis,
           we generate actionable insights in three categories:
         </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-          <Chip 
-            icon={<WarningIcon />} 
-            label="Alerts" 
-            variant="outlined" 
-            color="error" 
-            sx={{ borderRadius: 2 }} 
+          <Chip
+            icon={<WarningIcon />}
+            label="Alerts"
+            variant="outlined"
+            color="error"
+            sx={{ borderRadius: 2 }}
           />
-          <Chip 
-            icon={<TipsAndUpdatesIcon />} 
-            label="Suggestions" 
-            variant="outlined" 
-            color="warning" 
-            sx={{ borderRadius: 2 }} 
+          <Chip
+            icon={<TipsAndUpdatesIcon />}
+            label="Suggestions"
+            variant="outlined"
+            color="warning"
+            sx={{ borderRadius: 2 }}
           />
-          <Chip 
-            icon={<TrendingUpIcon />} 
-            label="Forecasts" 
-            variant="outlined" 
-            color="info" 
-            sx={{ borderRadius: 2 }} 
+          <Chip
+            icon={<TrendingUpIcon />}
+            label="Forecasts"
+            variant="outlined"
+            color="info"
+            sx={{ borderRadius: 2 }}
           />
         </Box>
-        <Typography variant="body2">
-          To generate more insights, add more communications by recording voice memos or entering text.
+        <Typography variant="body2" color="textSecondary" component="span">
+          <Chip label="cash flow" size="small" variant="outlined" sx={{ mr: 1 }} />
+          <Chip label="expenses" size="small" variant="outlined" sx={{ mr: 1 }} />
         </Typography>
       </Paper>
     </Container>
@@ -359,6 +458,16 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, icon, priorityColor 
 
   const handleMenuClose = () => {
     setMenuAnchorEl(null);
+  };
+
+  const handleViewDetails = () => {
+    // TODO: Implement view details functionality
+    handleMenuClose();
+  };
+
+  const handleDismiss = () => {
+    // TODO: Implement dismiss functionality
+    handleMenuClose();
   };
 
   return (
@@ -401,14 +510,17 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, icon, priorityColor 
             open={menuOpen}
             onClose={handleMenuClose}
           >
-            <MenuItem onClick={handleMenuClose}>
-              <ListItemText>Mark as resolved</ListItemText>
+            <MenuItem onClick={handleViewDetails}>
+              <ListItemIcon>
+                <VisibilityIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>View Details</ListItemText>
             </MenuItem>
-            <MenuItem onClick={handleMenuClose}>
-              <ListItemText>Export to PDF</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={handleMenuClose}>
-              <ListItemText>Share insight</ListItemText>
+            <MenuItem onClick={handleDismiss}>
+              <ListItemIcon>
+                <CloseIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Dismiss</ListItemText>
             </MenuItem>
           </Menu>
         </Box>
@@ -426,8 +538,8 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, icon, priorityColor 
             insight.category === 'alert'
               ? 'error'
               : insight.category === 'suggestion'
-              ? 'warning'
-              : 'info'
+                ? 'warning'
+                : 'info'
           }
           sx={{ borderRadius: 1 }}
         />

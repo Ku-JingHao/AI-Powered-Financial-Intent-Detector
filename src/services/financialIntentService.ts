@@ -31,6 +31,7 @@ export interface FinancialInsight {
   category: 'alert' | 'suggestion' | 'forecast';
   priority: 'low' | 'medium' | 'high';
   relatedIntentIds: string[];
+  timestamp: string;
 }
 
 // Mock function to analyze financial intent
@@ -54,39 +55,38 @@ export const analyzeFinancialIntent = async (text: string): Promise<FinancialInt
 };
 
 export const generateInsights = (intents: FinancialIntent[]): FinancialInsight[] => {
-  if (!intents.length) return [];
-  
   const insights: FinancialInsight[] = [];
-  
-  // Check for cash flow concerns
-  const cashFlowIntents = intents.filter(intent => 
-    intent.intents.some(i => i.type === 'cash_flow_concern')
+  const now = new Date().toISOString();
+
+  // Generate cash flow insights
+  const cashFlowIntents = intents.filter(i => 
+    i.intents.some(intent => intent.type === 'cash_flow_concern')
   );
-  
   if (cashFlowIntents.length > 0) {
     insights.push({
       id: Math.random().toString(36).substring(2, 10),
-      title: 'Cash Flow Alert',
-      description: 'Based on recent communications, there appears to be a concern about cash flow. Consider reviewing accounts receivable and upcoming expenses.',
+      title: 'Cash Flow Concerns Detected',
+      description: `Multiple communications indicate concerns about cash flow. Consider reviewing your current cash position and upcoming obligations.`,
       category: 'alert',
       priority: 'high',
       relatedIntentIds: cashFlowIntents.map(i => i.id),
+      timestamp: now
     });
   }
-  
-  // Check for expense reduction
-  const expenseIntents = intents.filter(intent => 
-    intent.intents.some(i => i.type === 'expense_reduction')
+
+  // Generate expense insights
+  const expenseIntents = intents.filter(i => 
+    i.intents.some(intent => intent.type === 'expense_reduction')
   );
-  
   if (expenseIntents.length > 0) {
     insights.push({
       id: Math.random().toString(36).substring(2, 10),
-      title: 'Expense Reduction Opportunity',
-      description: 'Communications indicate a desire to reduce expenses. Consider conducting a cost analysis to identify potential savings.',
+      title: 'Expense Reduction Opportunities',
+      description: `Several communications suggest potential areas for expense reduction. Review your current expenses and identify optimization opportunities.`,
       category: 'suggestion',
       priority: 'medium',
       relatedIntentIds: expenseIntents.map(i => i.id),
+      timestamp: now
     });
   }
   
