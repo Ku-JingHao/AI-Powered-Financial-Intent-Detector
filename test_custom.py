@@ -3,27 +3,52 @@ from financial_intent_analyzer import FinancialIntentAnalyzer
 # Initialize the analyzer
 analyzer = FinancialIntentAnalyzer()
 
-# Example text from a company meeting
+# Example text as a meeting recording transcript
 text = """
-So during today’s leadership meeting, the CFO brought up some concerns about our current cash flow situation. We're seeing delays in collections from Q1, with about RM180,000 still outstanding past 30 days. Most of that is tied up with two major clients, and if we don’t receive payment by mid-May, the finance team may need to escalate things through legal. It’s starting to affect our liquidity and could impact short-term operations if it continues.
+So during today's leadership meeting, the CFO brought up some critical concerns about our cash flow situation. We have about RM180,000 in overdue payments from Q1 that we absolutely must collect by mid-May, or we'll have to take legal action. This is really putting pressure on our liquidity, and we need to address this immediately.
 
-Looking ahead at Q2, the monthly burn rate is now hovering around RM120,000. If the new product line doesn’t start generating consistent revenue in the next month or so, we might hit a shortfall by late June. To mitigate that, there was a suggestion to pause a couple of marketing initiatives and delay some non-critical spending until we have better visibility on incoming revenue. Everyone agreed to take a more conservative approach for the next 4 to 6 weeks.
+The operations team is also in a tough spot - they're severely understaffed right now. We need to hire two operations team members and one junior accountant as soon as possible because our current staff is completely overwhelmed. This is causing significant delays in our core operations, and it's becoming a major bottleneck.
 
-On the HR side, we’re feeling the strain of being short-staffed. There’s a need to hire two operations team members and one junior accountant to handle the growing workload. The CEO gave the green light to proceed with recruitment, but reminded the team to stay within the adjusted hiring budget. Any contract-based hires will need a quick cost-benefit review before moving forward.
+On top of that, we just got notified that our main supplier is increasing raw material prices by 12% starting next week. This is going to hit our margins hard if we don't renegotiate quickly. The CEO has offered to personally step in on the next supplier call to try to secure a better deal.
 
-Lastly, we’re actively exploring financing options to give ourselves more breathing room. Finance is preparing an application for a working capital credit line—targeting RM250,000—and we’re also looking into a government SME grant that could help offset some upcoming payroll expenses. The plan is to have everything submitted by the end of next week so we can move quickly if approvals come through.
+For some medium-term solutions, we're preparing an application for a RM250,000 working capital credit line that we need to submit by the end of next week. We're also looking into a government SME grant that could help with our upcoming payroll expenses - the application deadline is in two weeks. We should also review our Q2 marketing budget and potentially scale back some initiatives until we have better visibility on our cash flow.
+
+Looking further ahead, we need to think about some longer-term strategies. We should explore establishing longer-term agreements with our suppliers to get better pricing in the future. We also need to do a proper cost-benefit analysis for any future contract-based hires, and develop a more robust pricing strategy that can better handle cost fluctuations.
+
+The CFO highlighted several red flags we need to watch out for. The most critical one is that we might face a serious cash flow shortfall by late June if we don't resolve these collection issues. Our operational costs are also rising due to the supplier price increases, and we'll need to address that within the next month. On a less urgent note, our marketing budget might need some optimization in the coming quarter.
+
+For immediate actions, we really need to implement a proper payment follow-up system for these overdue invoices. We should also develop a better supplier negotiation strategy to handle future price increases more effectively. And while it's not urgent, we should start thinking about implementing a long-term pricing strategy to better handle these kinds of cost fluctuations in the future.
 """
 
 # Analyze the text
 results = analyzer.analyze_financial_text(text)
 
 # Print results in a more readable format
-print("\nFinancial Intents:")
+print("\nSummary:")
 print("-" * 50)
-for key, value in results["financial_intents"].items():
+for key, value in results["summary"].items():
     print(f"{key}: {value}")
 
-print("\nUrgency Analysis:")
+print("\nFinancial Intents:")
 print("-" * 50)
-for key, value in results["urgency_analysis"].items():
-    print(f"{key}: {value}") 
+for intent in results["financial_intents"]["detected_intents"]:
+    print(f"\nIntent: {intent['description']}")
+    print(f"Urgency Level: {intent['urgency_level']} (Score: {intent['urgency_score']})")
+    print(f"Timeline: {intent['timeline']}")
+    print(f"Impact: {intent['impact']}")
+
+print("\nAlerts:")
+print("-" * 50)
+for alert in results["financial_intents"]["alerts"]:
+    print(f"\nAlert: {alert['message']}")
+    print(f"Severity: {alert['severity']}")
+    print(f"Impact: {alert['impact']}")
+    print(f"Recommendation: {alert['recommendation']}")
+
+print("\nSuggestions:")
+print("-" * 50)
+for suggestion in results["financial_intents"]["suggestions"]:
+    print(f"\nSuggestion: {suggestion['message']}")
+    print(f"Benefit: {suggestion['benefit']}")
+    print(f"Implementation: {suggestion['implementation']}")
+    print(f"Priority: {suggestion['priority']}") 

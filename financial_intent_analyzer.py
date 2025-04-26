@@ -49,15 +49,23 @@ class FinancialIntentAnalyzer:
 
         For each intent, use clear, specific language that describes the exact action or situation.
         Avoid vague terms like "staffing" - instead use specific descriptions like "Hiring 2 operations team members".
+        
+        Also identify:
+        1. Alerts: Critical issues that need immediate attention (e.g., "Critical cash flow shortage expected by June")
+        2. Suggestions: Recommendations for improvement (e.g., "Consider renegotiating supplier contracts to reduce costs")
 
         Text: {text}
         
         Return the analysis in JSON format with the following structure:
         {{
             "detected_intents": [
-                "Specific, clear description of each financial intent",
-                "Example: 'Hiring 2 operations team members and 1 junior accountant'",
-                "Example: 'Applying for RM250,000 working capital loan'"
+                {{
+                    "description": "Specific, clear description of the financial intent",
+                    "urgency_level": "low/medium/high",
+                    "urgency_score": 0.0 to 1.0,
+                    "timeline": "when this needs to be addressed",
+                    "impact": "description of financial impact"
+                }}
             ],
             "confidence_score": 0.0,
             "relevant_details": "any specific details mentioned",
@@ -78,6 +86,22 @@ class FinancialIntentAnalyzer:
                     "timeline": "expected timeline",
                     "description": "details about the action"
                 }}
+            ],
+            "alerts": [
+                {{
+                    "message": "description of the alert",
+                    "severity": "low/medium/high",
+                    "impact": "potential impact if not addressed",
+                    "recommendation": "suggestion for addressing the alert"
+                }}
+            ],
+            "suggestions": [
+                {{
+                    "message": "description of the suggestion",
+                    "benefit": "expected benefit if implemented",
+                    "implementation": "how to implement this suggestion",
+                    "priority": "low/medium/high"
+                }}
             ]
         }}
         """
@@ -86,7 +110,7 @@ class FinancialIntentAnalyzer:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are a financial intent analyzer. Use specific, clear language to describe financial intents. Avoid vague terms - be explicit about actions, amounts, and timelines. Always respond with valid JSON."},
+                    {"role": "system", "content": "You are a financial intent analyzer. Use specific, clear language to describe financial intents. Include urgency levels and identify both alerts and suggestions. Always respond with valid JSON."},
                     {"role": "user", "content": prompt}
                 ],
                 response_format={ "type": "json_object" }
@@ -101,74 +125,26 @@ class FinancialIntentAnalyzer:
                 "financial_topics": [],
                 "action_items": [],
                 "expenditures": [],
-                "revenue_actions": []
-            }
-    
-    def analyze_urgency(self, text: str) -> Dict:
-        """
-        Analyze the sentiment and urgency level of the financial communication using GPT.
-        """
-        urgency_prompt = f"""
-        Analyze the following text for both sentiment and urgency in financial context.
-        Consider factors like:
-        - Time sensitivity (immediate, short-term, long-term)
-        - Emotional tone (anxious, concerned, optimistic, etc.)
-        - Financial impact (high, medium, low)
-        - Requested action timeline (immediate, within days, within weeks)
-        - Overall sentiment (positive, negative, neutral)
-        
-        For scoring:
-        - sentiment_score: Use a scale from -1.0 (very negative) to 1.0 (very positive)
-        - urgency_score: Use a scale from 0.0 (no urgency) to 1.0 (critical urgency)
-        
-        Text: {text}
-        
-        Return the analysis in JSON format with the following structure:
-        {{
-            "sentiment": "positive/negative/neutral",
-            "sentiment_score": -1.0 to 1.0,
-            "urgency_level": "low/medium/high",
-            "urgency_score": 0.0 to 1.0,
-            "key_indicators": ["list", "of", "specific", "indicators", "found", "in", "text"],
-            "emotional_tone": "detailed description of emotional tone",
-            "time_sensitivity": "immediate/short-term/long-term",
-            "financial_impact": "high/medium/low"
-        }}
-        """
-        
-        try:
-            urgency_response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a financial urgency and sentiment analyzer. Provide specific scores for sentiment (-1.0 to 1.0) and urgency (0.0 to 1.0) based on the text content. Always respond with valid JSON."},
-                    {"role": "user", "content": urgency_prompt}
-                ],
-                response_format={ "type": "json_object" }
-            )
-            
-            return json.loads(urgency_response.choices[0].message.content)
-        except Exception as e:
-            return {
-                "sentiment": "neutral",
-                "sentiment_score": 0.0,
-                "urgency_level": "low",
-                "urgency_score": 0.0,
-                "key_indicators": [],
-                "emotional_tone": f"Error: {str(e)}",
-                "time_sensitivity": "unknown",
-                "financial_impact": "unknown"
+                "revenue_actions": [],
+                "alerts": [],
+                "suggestions": []
             }
     
     def analyze_financial_text(self, text: str) -> Dict:
         """
-        Combined analysis of financial intents and urgency.
+        Combined analysis of financial intents and insights.
         """
-        intents = self.extract_financial_intents(text)
-        urgency = self.analyze_urgency(text)
+        analysis = self.extract_financial_intents(text)
         
         return {
-            "financial_intents": intents,
-            "urgency_analysis": urgency
+            "financial_intents": analysis,
+            "summary": {
+                "total_intents": len(analysis.get("detected_intents", [])),
+                "high_urgency_intents": len([i for i in analysis.get("detected_intents", []) if i.get("urgency_level") == "high"]),
+                "total_alerts": len(analysis.get("alerts", [])),
+                "total_suggestions": len(analysis.get("suggestions", [])),
+                "overall_urgency": "high" if any(i.get("urgency_level") == "high" for i in analysis.get("detected_intents", [])) else "medium" if any(i.get("urgency_level") == "medium" for i in analysis.get("detected_intents", [])) else "low"
+            }
         }
 
 def main():
@@ -177,18 +153,18 @@ def main():
     
     # Example text
     example_text = """
-   So during today's leadership meeting, the CFO brought up some concerns about our current cash flow situation.
-   We're seeing delays in collections from Q1, with about RM180,000 still outstanding past 30 days.
-   Most of that is tied up with two major clients, and if we don't receive payment by mid-May, the finance team may need to escalate things through legal.
-   It's starting to affect our liquidity and could impact short-term operations if it continues.
-   Looking ahead at Q2, the monthly burn rate is now hovering around RM120,000. If the new product line doesn't start generating consistent revenue in the next month or so, we might hit a shortfall by late June.
-   To mitigate that, there was a suggestion to pause a couple of marketing initiatives and delay some non-critical spending until we have better visibility on incoming revenue.
-   Everyone agreed to take a more conservative approach for the next 4 to 6 weeks.
-   On the HR side, we're feeling the strain of being short-staffed. There's a need to hire two operations team members and one junior accountant to handle the growing workload.
-   The CEO gave the green light to proceed with recruitment, but reminded the team to stay within the adjusted hiring budget. Any contract-based hires will need a quick cost-benefit review before moving forward.
-   Operations also raised a red flag about rising supplier costs. One of our core vendors increased raw material prices by 12%, which is going to squeeze margins unless we renegotiate.
-   The CEO offered to personally step in on the next call with suppliers to try and lock in a better long-term deal or at least explore some competitive alternatives.
-   Lastly, we're actively exploring financing options to give ourselves more breathing room. Finance is preparing an application for a working capital credit line—targeting RM250,000—and we're also looking into a government SME grant that could help offset some upcoming payroll expenses. The plan is to have everything submitted by the end of next week so we can move quickly if approvals come through.
+    So during today's leadership meeting, the CFO brought up some concerns about our current cash flow situation.
+    We're seeing delays in collections from Q1, with about RM180,000 still outstanding past 30 days.
+    Most of that is tied up with two major clients, and if we don't receive payment by mid-May, the finance team may need to escalate things through legal.
+    It's starting to affect our liquidity and could impact short-term operations if it continues.
+    Looking ahead at Q2, the monthly burn rate is now hovering around RM120,000. If the new product line doesn't start generating consistent revenue in the next month or so, we might hit a shortfall by late June.
+    To mitigate that, there was a suggestion to pause a couple of marketing initiatives and delay some non-critical spending until we have better visibility on incoming revenue.
+    Everyone agreed to take a more conservative approach for the next 4 to 6 weeks.
+    On the HR side, we're feeling the strain of being short-staffed. There's a need to hire two operations team members and one junior accountant to handle the growing workload.
+    The CEO gave the green light to proceed with recruitment, but reminded the team to stay within the adjusted hiring budget. Any contract-based hires will need a quick cost-benefit review before moving forward.
+    Operations also raised a red flag about rising supplier costs. One of our core vendors increased raw material prices by 12%, which is going to squeeze margins unless we renegotiate.
+    The CEO offered to personally step in on the next call with suppliers to try and lock in a better long-term deal or at least explore some competitive alternatives.
+    Lastly, we're actively exploring financing options to give ourselves more breathing room. Finance is preparing an application for a working capital credit line—targeting RM250,000—and we're also looking into a government SME grant that could help offset some upcoming payroll expenses. The plan is to have everything submitted by the end of next week so we can move quickly if approvals come through.
     """
     
     # Analyze the text
