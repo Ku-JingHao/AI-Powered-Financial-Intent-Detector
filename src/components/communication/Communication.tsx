@@ -30,7 +30,7 @@ import { analyzeText } from '../../services/sentimentService';
 import { TabPanel } from './TabPanel';
 
 const Communication: React.FC = () => {
-  const { addIntent, addAnalysisResults, loading: processingIntent } = useFinancial();
+  const { addAnalysisResults, addForecastResult, loading: processingIntent, setLoading } = useFinancial();
   const [tabValue, setTabValue] = useState(0);
   const [textInput, setTextInput] = useState('');
   const [recordingState, setRecordingState] = useState<{
@@ -61,7 +61,6 @@ const Communication: React.FC = () => {
     severity: 'success',
   });
   const [sentimentResults, setSentimentResults] = useState<any>(null);
-  const [analyzing, setAnalyzing] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -73,7 +72,7 @@ const Communication: React.FC = () => {
   };
 
   const handleTextSubmit = async (text: string) => {
-    setAnalyzing(true);
+    setLoading(true);
     try {
       const response = await fetch('http://localhost:8000/analyze', {
         method: 'POST',
@@ -88,9 +87,41 @@ const Communication: React.FC = () => {
       }
 
       const data = await response.json();
+      
+      for (const intent of data.financial_intents.detected_intents) {
+        const requestBody = {
+          message: intent.description,
+          mode: "chat",
+          userId: 1,
+          reset: false
+        };
+
+        const response = await fetch(
+          "https://subtly-perfect-goat.ngrok-free.app/api/v1/workspace/test/thread/bb8070c1-df27-46ee-8722-1a9473fd1a41/chat",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer 2DN572N-CJ9MT6B-KM9CRN0-1TT8K89" // <-- Replace with your actual token
+            },
+            body: JSON.stringify(requestBody)
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`API call failed: ${response.statusText}`);
+        }
+
+        const aiResponse = await response.json();
+        console.log("AI Result:", aiResponse);
+
+        addForecastResult(intent, aiResponse);
+
+      }
+      
       setSentimentResults(data);
       addAnalysisResults(data);
-      await addIntent(text);
+      
       setSuccessMessage('Text analyzed successfully!');
     } catch (error) {
       console.error('Error analyzing text:', error);
@@ -100,7 +131,7 @@ const Communication: React.FC = () => {
         severity: 'error',
       });
     } finally {
-      setAnalyzing(false);
+      setLoading(false);
     }
   };
 
@@ -139,10 +170,10 @@ const Communication: React.FC = () => {
     if (!recordingState.recordedText.trim()) return;
 
     try {
-      setAnalyzing(true);
+      setLoading(true);
       const results = await analyzeText(recordingState.recordedText);
       setSentimentResults(results);
-      await addIntent(recordingState.recordedText);
+      // await addIntent(recordingState.recordedText);
       setRecordingState({
         isRecording: false,
         recordedText: '',
@@ -155,7 +186,7 @@ const Communication: React.FC = () => {
         severity: 'error',
       });
     } finally {
-      setAnalyzing(false);
+      setLoading(false);
     }
   };
 
@@ -217,10 +248,10 @@ const Communication: React.FC = () => {
     if (!uploadState.transcribedText.trim()) return;
 
     try {
-      setAnalyzing(true);
+      setLoading(true);
       const results = await analyzeText(uploadState.transcribedText);
       setSentimentResults(results);
-      await addIntent(uploadState.transcribedText);
+      // await addIntent(uploadState.transcribedText);
       setUploadState({
         uploading: false,
         transcribedText: '',
@@ -234,7 +265,7 @@ const Communication: React.FC = () => {
         severity: 'error',
       });
     } finally {
-      setAnalyzing(false);
+      setLoading(false);
     }
   };
 

@@ -2,12 +2,16 @@ import React, { createContext, useContext, useState, ReactNode, useCallback } fr
 import {
   FinancialIntent,
   FinancialInsight,
-  analyzeFinancialIntent,
   generateInsights
 } from '../services/financialIntentService';
 
 interface AnalysisResult {
   financial_intents: {
+    detected_intents: Array<{
+      description: string;
+      urgency_level: string;
+      impact: string;
+    }>;
     alerts: Array<{
       message: string;
       severity: string;
@@ -23,12 +27,17 @@ interface AnalysisResult {
   };
 }
 
+interface AIResult {
+  textResponse: string;
+}
+
 interface FinancialContextProps {
   intents: FinancialIntent[];
   insights: FinancialInsight[];
   loading: boolean;
-  addIntent: (text: string) => Promise<void>;
+  setLoading: (loading: boolean) => void;
   addAnalysisResults: (results: AnalysisResult) => void;
+  addForecastResult: (intent: any, results: AIResult) => void;
   clearAll: () => void;
   refreshInsights: () => void;
 }
@@ -48,18 +57,6 @@ export const FinancialProvider: React.FC<FinancialProviderProps> = ({ children }
     const updatedInsights = generateInsights(intents);
     setInsights(updatedInsights);
   }, [intents]);
-
-  const addIntent = async (text: string) => {
-    setLoading(true);
-    try {
-      const newIntent = await analyzeFinancialIntent(text);
-      setIntents(prevIntents => [...prevIntents, newIntent]);
-    } catch (error) {
-      console.error('Error analyzing financial intent:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const addAnalysisResults = (results: AnalysisResult) => {
     const now = new Date().toISOString();
@@ -94,6 +91,22 @@ export const FinancialProvider: React.FC<FinancialProviderProps> = ({ children }
     setInsights(prevInsights => [...prevInsights, ...newInsights]);
   };
 
+  const addForecastResult = (intent: any, results: AIResult) => {
+    const now = new Date().toISOString();
+    
+    const newInsights: FinancialInsight = {
+      id: `forecast-${now}`,
+      title: intent.description,
+      description: results.textResponse,
+      category: 'forecast',
+      priority: intent.urgency_level,
+      relatedIntentIds: [],
+      timestamp: now
+    }
+
+    setInsights(prevInsights => [...prevInsights, newInsights]);
+  }
+
   const clearAll = () => {
     setIntents([]);
     setInsights([]);
@@ -103,8 +116,9 @@ export const FinancialProvider: React.FC<FinancialProviderProps> = ({ children }
     intents,
     insights,
     loading,
-    addIntent,
+    setLoading,
     addAnalysisResults,
+    addForecastResult,
     clearAll,
     refreshInsights,
   };
