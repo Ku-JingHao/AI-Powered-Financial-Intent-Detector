@@ -1,46 +1,83 @@
-# Getting Started with Create React App
+# Financial Intent Detector
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+An AI-powered tool that analyzes casual communications (text and voice) to extract financial intent and convert it into actionable financial insights for small businesses.
 
-## Available Scripts
+## About the Project
 
-In the project directory, you can run:
+This application helps small business owners by:
 
-### `npm start`
+- Analyzing text and voice communications to detect financial intents
+- Converting unstructured financial communications into structured insights
+- Providing actionable recommendations and alerts based on detected intents
+- Monitoring financial sentiment and identifying potential risks
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Features
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+- **Text Analysis**: Enter financial communications for intent detection
+- **Voice Recording**: Record voice memos for real-time financial intent analysis
+- **Audio Upload**: Upload audio files containing financial discussions
+- **Financial Insights**: View actionable insights categorized as alerts, suggestions, and forecasts
+- **Dashboard**: Get an overview of financial health with key metrics and visualizations
 
-### `npm test`
+## Technology Stack
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **Frontend**: React.js with TypeScript
+- **UI Framework**: Material UI for components and styling
+- **Voice Processing**: Microsoft Azure Speech Services for voice-to-text conversion
+- **State Management**: React Context API
+- **Data Visualization**: Chart.js with react-chartjs-2
 
-### `npm run build`
+## Getting Started
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Prerequisites
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- Node.js (v14 or higher)
+- npm or yarn
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Installation
 
-### `npm run eject`
+1. Clone the repository
+   ```bash
+   git clone https://github.com/your-username/financial-intent-detector.git
+   cd financial-intent-detector
+   ```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+2. Install dependencies
+   ```bash
+   npm install
+   ```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+3. Create a `.env` file in the root directory with your Azure Speech Services credentials:
+   ```
+   REACT_APP_AZURE_SPEECH_KEY=your_azure_speech_key
+   REACT_APP_AZURE_SPEECH_REGION=your_azure_speech_region
+   ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+4. Start the development server
+   ```bash
+   npm start
+   ```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Usage
 
-## Learn More
+1. **Dashboard**: View your financial health overview and insights on the home page
+2. **Add Communications**: Navigate to the Communication page to add financial text, record voice memos, or upload audio files
+3. **View Insights**: Check the Insights page for actionable financial recommendations categorized by priority and type
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Future Enhancements
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- Integration with financial data sources for more accurate insights
+- Advanced NLP models for better financial intent detection
+- Export insights to PDF or spreadsheets
+- Mobile app for on-the-go financial intent capture
+- Integration with accounting software and financial planning tools
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Microsoft Azure Speech Services for voice-to-text functionality
+- Material UI for the component library
+- React and TypeScript for the development framework

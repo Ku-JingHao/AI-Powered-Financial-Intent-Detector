@@ -1,25 +1,44 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import Dashboard from './components/dashboard/Dashboard';
+import Communication from './components/communication/Communication';
+import Insights from './components/insights/Insights';
+import Navbar from './components/common/Navbar';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#2196f3', // Blue color for primary elements
+    },
+    secondary: {
+      main: '#ff9800', // Orange for accent elements
+    },
+    background: {
+      default: '#f5f5f5', // Light grey for background
+    },
+  },
+  typography: {
+    fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
+    h4: {
+      fontWeight: 600,
+    },
+  },
+});
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/communication" element={<Communication />} />
+          <Route path="/insights" element={<Insights />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 
