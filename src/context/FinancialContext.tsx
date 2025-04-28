@@ -93,7 +93,7 @@ export const FinancialProvider: React.FC<FinancialProviderProps> = ({ children }
 
   const addForecastResult = (intent: any, results: AIResult) => {
     const now = new Date().toISOString();
-    
+
     const newInsights: FinancialInsight = {
       id: `forecast-${now}`,
       title: intent.description,

@@ -1,14 +1,14 @@
 import React, { useMemo } from 'react';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Paper, 
-  Alert, 
-  Divider, 
-  List, 
-  ListItem, 
-  ListItemIcon, 
+import {
+  Container,
+  Typography,
+  Box,
+  Paper,
+  Alert,
+  Divider,
+  List,
+  ListItem,
+  ListItemIcon,
   ListItemText,
   Button,
   Chip
@@ -32,95 +32,73 @@ const Dashboard: React.FC = () => {
 
   // Generate summary data for the dashboard
   const summaryData = useMemo(() => {
-    // Get all detected intent types
-    const allIntentTypes = intents.flatMap(intent => 
-      intent.intents.map(i => i.type)
-    );
-    
-    // Count occurrences of each intent type
-    const intentCounts: Record<IntentType, number> = {
-      cash_flow_concern: 0,
-      expense_reduction: 0,
-      investment_opportunity: 0,
-      revenue_growth: 0,
-      budget_planning: 0,
-      tax_consideration: 0,
-      debt_management: 0
+    // Count insights by category
+    const insightCounts = {
+      alert: insights.filter(i => i.category === 'alert').length,
+      suggestion: insights.filter(i => i.category === 'suggestion').length,
+      forecast: insights.filter(i => i.category === 'forecast').length
     };
-    
-    allIntentTypes.forEach(type => {
-      if (type in intentCounts) {
-        intentCounts[type]++;
+
+    // Count insights by priority
+    const priorityCounts = {
+      high: insights.filter(i => i.priority === 'high').length,
+      medium: insights.filter(i => i.priority === 'medium').length,
+      low: insights.filter(i => i.priority === 'low').length
+    };
+
+    // Get total detected intents from insights
+    const totalDetectedIntents = insights.reduce((count, insight) => {
+      // Each forecast insight represents one detected intent
+      if (insight.category === 'forecast') {
+        return count + 1;
       }
-    });
-    
-    // Get sentiment counts
-    const sentimentCounts = {
-      positive: 0,
-      neutral: 0,
-      negative: 0
-    };
-    
-    intents.forEach(intent => {
-      sentimentCounts[intent.sentiment.label]++;
-    });
-    
+      return count;
+    }, 0);
+
     return {
-      intentCounts,
-      sentimentCounts,
-      totalIntents: intents.length,
+      totalIntents: totalDetectedIntents,
       totalInsights: insights.length,
-      highPriorityInsights: insights.filter(i => i.priority === 'high').length
+      highPriorityInsights: priorityCounts.high,
+      insightCounts,
+      priorityCounts
     };
   }, [intents, insights]);
 
-  // Chart data for intents distribution
-  const intentsChartData = useMemo(() => {
+  // Chart data for insights distribution
+  const insightsChartData = useMemo(() => {
     return {
-      labels: [
-        'Cash Flow', 
-        'Expenses', 
-        'Investment', 
-        'Revenue', 
-        'Budget',
-        'Tax',
-        'Debt'
-      ],
+      labels: ['Alerts', 'Suggestions', 'Forecasts'],
       datasets: [
         {
-          label: 'Detected Intents',
+          label: 'Insights by Category',
           data: [
-            summaryData.intentCounts.cash_flow_concern,
-            summaryData.intentCounts.expense_reduction,
-            summaryData.intentCounts.investment_opportunity,
-            summaryData.intentCounts.revenue_growth,
-            summaryData.intentCounts.budget_planning,
-            summaryData.intentCounts.tax_consideration,
-            summaryData.intentCounts.debt_management
+            summaryData.insightCounts.alert,
+            summaryData.insightCounts.suggestion,
+            summaryData.insightCounts.forecast
           ],
-          backgroundColor: '#2196f3',
+          backgroundColor: ['#f44336', '#ff9800', '#2196f3'],
         },
       ],
     };
-  }, [summaryData.intentCounts]);
+  }, [summaryData.insightCounts]);
 
-  // Chart data for sentiment distribution
-  const sentimentChartData = useMemo(() => {
+  // Chart data for priority distribution
+  const priorityChartData = useMemo(() => {
     return {
-      labels: ['Positive', 'Neutral', 'Negative'],
+      labels: ['High', 'Medium', 'Low'],
       datasets: [
         {
-          label: 'Communication Sentiment',
+          label: 'Insights by Priority',
           data: [
-            summaryData.sentimentCounts.positive,
-            summaryData.sentimentCounts.neutral,
-            summaryData.sentimentCounts.negative,
+            summaryData.priorityCounts.high,
+            summaryData.priorityCounts.medium,
+            summaryData.priorityCounts.low
           ],
-          backgroundColor: ['#4caf50', '#ff9800', '#f44336'],
+          backgroundColor: ['#f44336', '#ff9800', '#4caf50'],
         },
       ],
     };
-  }, [summaryData.sentimentCounts]);
+  }, [summaryData.priorityCounts]);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
@@ -138,7 +116,7 @@ const Dashboard: React.FC = () => {
         <Box sx={{ display: 'flex', flexWrap: 'wrap', mx: -1.5 }}>
           <Box sx={{ width: { xs: '100%', sm: '50%', md: '25%' }, p: 1.5 }}>
             <InfoCard
-              title="Total Communications"
+              title="Total Intents Detected"
               value={summaryData.totalIntents}
               icon={<EventNoteIcon />}
               color="#2196f3"
@@ -154,17 +132,17 @@ const Dashboard: React.FC = () => {
           </Box>
           <Box sx={{ width: { xs: '100%', sm: '50%', md: '25%' }, p: 1.5 }}>
             <InfoCard
-              title="Cash Flow Concerns"
-              value={summaryData.intentCounts.cash_flow_concern}
-              icon={<AccountBalanceWalletIcon />}
+              title="High Priority Alerts"
+              value={summaryData.highPriorityInsights}
+              icon={<WarningAmberIcon />}
               color="#f44336"
             />
           </Box>
           <Box sx={{ width: { xs: '100%', sm: '50%', md: '25%' }, p: 1.5 }}>
             <InfoCard
-              title="Budget Planning"
-              value={summaryData.intentCounts.budget_planning}
-              icon={<BarChartIcon />}
+              title="Forecasts"
+              value={summaryData.insightCounts.forecast}
+              icon={<TrendingUpIcon />}
               color="#4caf50"
             />
           </Box>
@@ -174,11 +152,11 @@ const Dashboard: React.FC = () => {
       {/* Data Visualization */}
       <Box sx={{ mb: 4 }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', mx: -1.5 }}>
-          <Box sx={{ width: { xs: '100%', md: '58.333%' }, p: 1.5 }}>
-            <BarChart title="Financial Intents Distribution" data={intentsChartData} />
+          <Box sx={{ width: { xs: '100%', md: '50%' }, p: 1.5 }}>
+            <BarChart title="Insights by Category" data={insightsChartData} />
           </Box>
-          <Box sx={{ width: { xs: '100%', md: '41.667%' }, p: 1.5 }}>
-            <BarChart title="Communication Sentiment" data={sentimentChartData} />
+          <Box sx={{ width: { xs: '100%', md: '50%' }, p: 1.5 }}>
+            <BarChart title="Insights by Priority" data={priorityChartData} />
           </Box>
         </Box>
       </Box>
@@ -188,17 +166,17 @@ const Dashboard: React.FC = () => {
         <Typography variant="h5" gutterBottom>
           High Priority Insights
         </Typography>
-        
+
         {insights.filter(insight => insight.priority === 'high').length > 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {insights
               .filter(insight => insight.priority === 'high')
               .map(insight => (
-                <Alert 
+                <Alert
                   key={insight.id}
-                  severity="warning" 
+                  severity="warning"
                   icon={<WarningAmberIcon />}
-                  sx={{ 
+                  sx={{
                     borderRadius: 2,
                     '& .MuiAlert-message': {
                       width: '100%'
@@ -209,9 +187,9 @@ const Dashboard: React.FC = () => {
                     <Typography variant="subtitle1" fontWeight="bold">
                       {insight.title}
                     </Typography>
-                    <Chip 
-                      label={insight.category.toUpperCase()} 
-                      size="small" 
+                    <Chip
+                      label={insight.category.toUpperCase()}
+                      size="small"
                       color={insight.category === 'alert' ? 'error' : 'primary'}
                     />
                   </Box>
@@ -228,59 +206,50 @@ const Dashboard: React.FC = () => {
         )}
       </Box>
 
-      {/* Recent Communications */}
+      {/* Recent Insights */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h5" gutterBottom>
-          Recent Communications
+          Recent Insights
         </Typography>
-        
-        {intents.length > 0 ? (
+
+        {insights.length > 0 ? (
           <Paper sx={{ p: 0, overflow: 'hidden', borderRadius: 3 }}>
             <List disablePadding>
-              {intents.slice(-3).map((intent, index) => (
-                <React.Fragment key={intent.id}>
+              {insights.slice(-3).map((insight, index) => (
+                <React.Fragment key={insight.id}>
                   <ListItem alignItems="flex-start" sx={{ py: 2, px: 3 }}>
                     <ListItemIcon>
-                      {intent.intents[0]?.type === 'cash_flow_concern' && <AccountBalanceWalletIcon color="error" />}
-                      {intent.intents[0]?.type === 'expense_reduction' && <MoneyOffIcon color="warning" />}
-                      {intent.intents[0]?.type === 'revenue_growth' && <TrendingUpIcon color="success" />}
-                      {intent.intents[0]?.type === 'budget_planning' && <BarChartIcon color="info" />}
-                      {(intent.intents[0]?.type !== 'cash_flow_concern' && 
-                        intent.intents[0]?.type !== 'expense_reduction' && 
-                        intent.intents[0]?.type !== 'revenue_growth' && 
-                        intent.intents[0]?.type !== 'budget_planning') && 
-                        <EventNoteIcon color="action" />}
+                      {insight.category === 'alert' && <WarningAmberIcon color="error" />}
+                      {insight.category === 'suggestion' && <LightbulbIcon color="warning" />}
+                      {insight.category === 'forecast' && <TrendingUpIcon color="success" />}
                     </ListItemIcon>
                     <ListItemText
                       primary={
                         <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
-                          {new Date(intent.timestamp).toLocaleString()}
+                          {insight.title}
                         </Typography>
                       }
                       secondary={
                         <>
                           <Typography component="span" variant="body2" color="text.primary">
-                            {intent.text}
+                            {insight.description}
                           </Typography>
                           <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
-                            {intent.intents.map(i => (
-                              <Chip 
-                                key={i.type} 
-                                label={i.type.split('_').join(' ')} 
-                                size="small" 
-                                variant="outlined"
-                                sx={{ textTransform: 'capitalize' }}
-                              />
-                            ))}
-                            <Chip 
-                              label={intent.sentiment.label} 
-                              size="small" 
+                            <Chip
+                              label={insight.category}
+                              size="small"
+                              variant="outlined"
+                              sx={{ textTransform: 'capitalize' }}
+                            />
+                            <Chip
+                              label={insight.priority}
+                              size="small"
                               color={
-                                intent.sentiment.label === 'positive' 
-                                  ? 'success' 
-                                  : intent.sentiment.label === 'negative' 
-                                    ? 'error' 
-                                    : 'default'
+                                insight.priority === 'high'
+                                  ? 'error'
+                                  : insight.priority === 'medium'
+                                    ? 'warning'
+                                    : 'success'
                               }
                             />
                           </Box>
@@ -288,7 +257,7 @@ const Dashboard: React.FC = () => {
                       }
                     />
                   </ListItem>
-                  {index < intents.slice(-3).length - 1 && <Divider />}
+                  {index < insights.slice(-3).length - 1 && <Divider />}
                 </React.Fragment>
               ))}
             </List>
@@ -296,12 +265,12 @@ const Dashboard: React.FC = () => {
         ) : (
           <Paper sx={{ p: 3, borderRadius: 3, bgcolor: '#f7f7f7' }}>
             <Typography align="center" color="text.secondary">
-              No communications analyzed yet
+              No insights generated yet
             </Typography>
           </Paper>
         )}
       </Box>
-      
+
       {/* Call to Action */}
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
         <Button
@@ -309,9 +278,9 @@ const Dashboard: React.FC = () => {
           to="/communication"
           variant="contained"
           size="large"
-          sx={{ 
-            px: 4, 
-            py: 1.5, 
+          sx={{
+            px: 4,
+            py: 1.5,
             borderRadius: 2,
             fontWeight: 'bold',
             boxShadow: '0 4px 10px rgba(33, 150, 243, 0.3)'
