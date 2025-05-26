@@ -2,8 +2,8 @@ import * as speechsdk from 'microsoft-cognitiveservices-speech-sdk';
 
 // Azure Speech Service Credentials
 const speechConfig = speechsdk.SpeechConfig.fromSubscription(
-  "BRSNZiVwft5xHRt7mDe13KHWiseJRlTKSzYraMvoHFnuywfJ37gPJQQJ99BCACqBBLyXJ3w3AAAYACOGCVA8",
-  "southeastasia"
+  "input your text to speech api",
+  "region"
 );
 
 speechConfig.speechRecognitionLanguage = 'en-US';
